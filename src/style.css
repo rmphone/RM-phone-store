@@ -1,0 +1,302 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  font-family: 'Cairo', sans-serif;
+  color: #172033;
+  background: #f5f7fb;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+}
+
+button, input, textarea, select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 18px;
+  background: #142d52;
+  color: white;
+  font-weight: 700;
+  transition: .2s;
+}
+
+button:hover {
+  background: #e5a323;
+  color: #142033;
+}
+
+.header {
+  background: #101c30;
+  color: white;
+  padding: 16px 5%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand h1 {
+  margin: 0;
+  font-size: 22px;
+  letter-spacing: 1px;
+}
+
+.brand small {
+  color: #e5a323;
+}
+
+.logo {
+  background: #e5a323;
+  color: #101c30;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  font-size: 23px;
+  font-weight: 900;
+}
+
+.header nav {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.header nav button {
+  background: transparent;
+  border: 1px solid #ffffff30;
+}
+
+.hero {
+  background: linear-gradient(125deg,#101c30,#244a75);
+  color: white;
+  text-align: center;
+  padding: 65px 20px;
+}
+
+.hero span {
+  color: #e5a323;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.hero h2 {
+  font-size: clamp(25px,5vw,43px);
+  margin: 15px 0;
+}
+
+.hero p {
+  color: #d6e0ef;
+}
+
+.hero button {
+  background: #e5a323;
+  color: #101c30;
+  margin-top: 15px;
+}
+
+.content {
+  max-width: 1150px;
+  margin: auto;
+  padding: 35px 18px;
+}
+
+.content h2 {
+  color: #142d52;
+}
+
+.content > input,
+.order-form input,
+.order-form textarea,
+.order-form select {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #dce2eb;
+  border-radius: 10px;
+  margin: 7px 0;
+  background: white;
+  color: #172033;
+  outline: none;
+}
+
+input:focus, textarea:focus, select:focus {
+  border-color: #e5a323;
+}
+
+.categories {
+  display: flex;
+  gap: 9px;
+  overflow-x: auto;
+  padding: 18px 0;
+}
+
+.categories button {
+  white-space: nowrap;
+  background: white;
+  color: #142d52;
+  border: 1px solid #dce2eb;
+}
+
+.categories button.active {
+  background: #142d52;
+  color: white;
+}
+
+.products {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+  gap: 20px;
+}
+
+.product {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid #e9edf3;
+  box-shadow: 0 5px 20px #152d5010;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.product-image {
+  background: #f0f4fa;
+  border-radius: 13px;
+  height: 150px;
+  display: grid;
+  place-items: center;
+  font-size: 65px;
+}
+
+.product h3 {
+  margin: 5px 0;
+  color: #142d52;
+}
+
+.product p {
+  color: #758096;
+  font-size: 14px;
+}
+
+.product strong {
+  color: #d18d0d;
+  font-size: 19px;
+}
+
+.product button {
+  margin-top: auto;
+}
+
+.tag {
+  color: #94701c;
+  font-size: 12px;
+}
+
+.cart-item {
+  background: white;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.order-form {
+  background: white;
+  padding: 22px;
+  border-radius: 15px;
+  margin-top: 20px;
+  box-shadow: 0 5px 20px #152d5010;
+}
+
+.order-form textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+.order-form button {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.notice {
+  background: #e7f5eb;
+  color: #176b37;
+  padding: 14px;
+  margin: 15px auto;
+  max-width: 700px;
+  border-radius: 10px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.notice button {
+  background: transparent;
+  color: inherit;
+  padding: 0 10px;
+}
+
+footer {
+  background: #101c30;
+  color: white;
+  text-align: center;
+  padding: 35px 15px;
+  margin-top: 40px;
+}
+
+footer h2 {
+  color: #e5a323;
+}
+
+@media(max-width:600px) {
+  .header {
+    justify-content: center;
+    text-align: center;
+  }
+
+  .header nav {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .hero {
+    padding: 45px 15px;
+  }
+
+  .products {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: 10px;
+  }
+
+  .product {
+    padding: 12px;
+  }
+
+  .product-image {
+    height: 115px;
+    font-size: 48px;
+  }
+}
