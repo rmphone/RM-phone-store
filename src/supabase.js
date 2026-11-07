@@ -1,14 +1,6 @@
-
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = 'https://gudoqqhkdjzwjdnvhjrq.supabase.co';
+const supabaseKey = 'sb_publishable_rGXjz1ih8Ke9qG4kfcuGog_4sGP0NRb';
 
-if (!supabaseUrl || !supabaseKey) {
-  console.warn('Supabase configuration is missing');
-}
-
-export const supabase = createClient(
-  supabaseUrl || 'https://example.supabase.co',
-  supabaseKey || 'placeholder-key'
-);
+export const supabase = createClient(supabaseUrl, supabaseKey);
