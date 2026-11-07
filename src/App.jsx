@@ -661,6 +661,12 @@ export default function App() {
               <option key={cat} value={cat}>{cat}</option>
             ))}
           </select>
+                  <button
+          type="button"
+          onClick={() => deleteOrder(order)}
+        >
+          حذف الطلب
+        </button>
 
           <label>الثمن بالدرهم</label>
           <input
