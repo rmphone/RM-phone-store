@@ -782,7 +782,7 @@ export default function App() {
               <p>الحالة: {order.status}</p>
 <button
   type="button"
-  onClick={() => deleteOrder(order)}
+  
 >
   🗑 حذف الطلب
 </button>
@@ -828,7 +828,7 @@ export default function App() {
           </button>
           <button onClick={() => setPage('repair')}>إصلاح في المنزل</button>
           <button onClick={() => setPage('contact')}>تواصل معنا</button>
-          <button onClick={() => setPage('admin')}>الإدارة</button>
+        
         </nav>
       </header>
 
