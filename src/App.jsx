@@ -750,6 +750,15 @@ export default function App() {
           orders.map(order => (
             <div className="admin-item" key={order.id}>
               <h4>طلب من: {order.customer_name}</h4>
+              <p>
+  📅 التاريخ: {order.created_at
+    ? new Date(order.created_at).toLocaleString('fr-MA', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+        timeZone: 'Africa/Casablanca'
+      })
+    : 'غير متوفر'}
+</p>
               <p>الهاتف: {order.phone}</p>
               <p>المدينة: {order.city}</p>
               <p>العنوان: {order.address}</p>
