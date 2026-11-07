@@ -16,6 +16,7 @@ export default function App() {
   const [category, setCategory] = useState('الكل');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState('shop');
+  const [logoClicks, setLogoClicks] = useState(0);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState('');
 
@@ -804,7 +805,20 @@ export default function App() {
     return (
     <div className="app">
       <header className="site-header">
-        <h1>RM-PHONE</h1>
+       <h1
+  onClick={() => {
+    const next = logoClicks + 1;
+    setLogoClicks(next);
+
+    if (next >= 2) {
+      setPage('admin');
+      setLogoClicks(0);
+    }
+  }}
+  style={{ cursor: 'pointer' }}
+>
+  RM-PHONE
+</h1>
         <p>كل ما تحتاجه لهاتفك</p>
 
         <nav className="main-nav">
