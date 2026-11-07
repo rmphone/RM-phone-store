@@ -687,7 +687,41 @@ export default function App() {
               {product.active ? 'إخفاء' : 'إظهار'}
             </button>
           </div>
-        ))}
+        ))}        <h3>الطلبات الواردة</h3>
+        <button type="button" onClick={loadOrders}>
+          تحديث الطلبات
+        </button>
+
+        {orders.length === 0 ? (
+          <p>ما كاين حتى طلب حالياً.</p>
+        ) : (
+          orders.map(order => (
+            <div className="admin-item" key={order.id}>
+              <h4>طلب من: {order.customer_name}</h4>
+              <p>الهاتف: {order.phone}</p>
+              <p>المدينة: {order.city}</p>
+              <p>العنوان: {order.address}</p>
+              <p>
+                المنتجات: {(order.items || []).map(item =>
+                  `${item.name} × ${item.quantity}`
+                ).join('، ')}
+              </p>
+              <p>المجموع: {money(order.total)}</p>
+              <p>الحالة: {order.status}</p>
+
+              <select
+                value={order.status || 'new'}
+                onChange={e => updateOrderStatus(order, e.target.value)}
+              >
+                <option value="new">جديد</option>
+                <option value="confirmed">مؤكد</option>
+                <option value="processing">قيد المعالجة</option>
+                <option value="completed">مكتمل</option>
+                <option value="cancelled">ملغى</option>
+              </select>
+            </div>
+          ))
+        )}
       </section>
     );
   }
