@@ -4,6 +4,12 @@ import './style.css';
 
 const money = n => `${Number(n || 0).toLocaleString('fr-MA')} DH`;
 
+const CONTACTS = [
+  { name: 'MOUAD', phone: '+212 6 10 58 87 59', digits: '212610588759' },
+  { name: 'RIDA', phone: '+212 6 18 32 44 90', digits: '212618324490' }
+];
+const INSTAGRAM_URL = 'https://www.instagram.com/rmphon.e/';
+
 export default function App() {
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
@@ -14,7 +20,11 @@ export default function App() {
   const [message, setMessage] = useState('');
 
   const [customer, setCustomer] = useState({
-    name: '', phone: '', address: ''
+    name: '', phone: '', city: '', address: ''
+  });
+
+  const [repair, setRepair] = useState({
+    name: '', phone: '', device: '', problem: '', address: ''
   });
 
   const [email, setEmail] = useState('');
@@ -27,6 +37,8 @@ export default function App() {
     name: '', category: 'هواتف', price: '',
     description: '', image_url: ''
   });
+  const [imageFile, setImageFile] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   const categories = [
     'الكل', 'هواتف', 'إكسسوارات',
@@ -49,26 +61,6 @@ export default function App() {
     setLoading(false);
   }
 
-  async function checkAdmin(currentUser) {
-    if (!currentUser) {
-      setAdmin(false);
-      setUser(null);
-      return;
-    }
-
-    setUser(currentUser);
-
-    const { data, error } = await supabase.rpc('is_admin');
-
-    if (!error && data === true) {
-      setAdmin(true);
-      await loadProducts(true);
-      await loadOrders();
-    } else {
-      setAdmin(false);
-    }
-  }
-
   async function loadOrders() {
     const { data, error } = await supabase
       .from('orders')
@@ -79,6 +71,25 @@ export default function App() {
       setMessage('تعذر تحميل الطلبات: ' + error.message);
     } else {
       setOrders(data || []);
+    }
+  }
+
+  async function checkAdmin(currentUser) {
+    if (!currentUser) {
+      setAdmin(false);
+      setUser(null);
+      return;
+    }
+
+    setUser(currentUser);
+    const { data, error } = await supabase.rpc('is_admin');
+
+    if (!error && data === true) {
+      setAdmin(true);
+      await loadProducts(true);
+      await loadOrders();
+    } else {
+      setAdmin(false);
     }
   }
 
@@ -104,7 +115,6 @@ export default function App() {
         category === 'الكل' || p.category === category;
       const matchesSearch =
         (p.name || '').toLowerCase().includes(search.toLowerCase());
-
       return matchesCategory && matchesSearch;
     });
   }, [products, category, search]);
@@ -151,6 +161,7 @@ export default function App() {
     const { error } = await supabase.from('orders').insert([{
       customer_name: customer.name,
       phone: customer.phone,
+      city: customer.city,
       address: customer.address,
       items: cart.map(item => ({
         id: item.id,
@@ -168,398 +179,557 @@ export default function App() {
     }
 
     setCart([]);
-    setCustomer({ name: '', phone: '', address: '' });
+    setCustomer({ name: '', phone: '', city: '', address: '' });
     setPage('shop');
     setMessage('تم إرسال الطلب بنجاح، شكراً لك!');
   }
 
-  async function login(e) {
+  function sendRepairRequest(e) {
     e.preventDefault();
-    setMessage('جاري تسجيل الدخول...');
 
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const text = [
+      'طلب إصلاح هاتف في المنزل - RM-PHONE',
+      `الاسم: ${repair.name}`,
+      `الهاتف: ${repair.phone}`,
+      `نوع الهاتف: ${repair.device}`,
+      `العطل: ${repair.problem}`,
+      'المدينة: طنجة',
+      `العنوان: ${repair.address}`
+    ].join('\n');
+
+    const url = `https://wa.me/${CONTACTS[0].digits}?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+    setMessage('اختار إرسال الرسالة من WhatsApp باش يوصلنا طلبك.');
+  }
+    async function loginAdmin(e) {
+    e.preventDefault();
+    setMessage('');
+
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password
     });
 
     if (error) {
       setMessage('معلومات الدخول غير صحيحة: ' + error.message);
-      return;
+    } else {
+      setPassword('');
+      setMessage('تم تسجيل الدخول');
     }
-
-    const { data: allowed, error: adminError } =
-      await supabase.rpc('is_admin');
-
-    if (adminError || allowed !== true) {
-      await supabase.auth.signOut();
-      setMessage('هاد الحساب ما عندوش صلاحية الإدارة');
-      return;
-    }
-
-    setUser(data.user);
-    setAdmin(true);
-    setPage('admin');
-    await loadProducts(true);
-    await loadOrders();
-    setMessage('مرحبا بك في لوحة الإدارة');
   }
 
-  async function logout() {
+  async function logoutAdmin() {
     await supabase.auth.signOut();
     setAdmin(false);
     setUser(null);
     setPage('shop');
-    await loadProducts(false);
     setMessage('تم تسجيل الخروج');
   }
 
   async function saveProduct(e) {
     e.preventDefault();
+    setMessage('');
 
-    const product = {
-      name: productForm.name,
-      category: productForm.category,
-      price: Number(productForm.price),
-      description: productForm.description,
-      image_url: productForm.image_url,
-      active: true
-    };
-
-    const { error } = await supabase.from('products').insert([product]);
-
-    if (error) {
-      setMessage('تعذر إضافة المنتج: ' + error.message);
+    if (!productForm.name || !productForm.price) {
+      setMessage('دخل اسم المنتج والثمن');
       return;
     }
 
-    setProductForm({
-      name: '', category: 'هواتف', price: '',
-      description: '', image_url: ''
-    });
+    setUploadingImage(true);
 
-    await loadProducts(true);
-    setMessage('تمت إضافة المنتج');
+    try {
+      let imageUrl = productForm.image_url;
+
+      if (imageFile) {
+        const extension = imageFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random()
+          .toString(36).slice(2)}.${extension}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('products')
+          .upload(fileName, imageFile, {
+            cacheControl: '3600',
+            upsert: false
+          });
+
+        if (uploadError) throw uploadError;
+
+        const { data } = supabase.storage
+          .from('products')
+          .getPublicUrl(fileName);
+
+        imageUrl = data.publicUrl;
+      }
+
+      const { error } = await supabase.from('products').insert([{
+        name: productForm.name,
+        category: productForm.category,
+        price: Number(productForm.price),
+        description: productForm.description,
+        image_url: imageUrl,
+        active: true
+      }]);
+
+      if (error) throw error;
+
+      setProductForm({
+        name: '', category: 'هواتف', price: '',
+        description: '', image_url: ''
+      });
+      setImageFile(null);
+      await loadProducts(true);
+      setMessage('تمت إضافة المنتج بنجاح');
+    } catch (error) {
+      setMessage('وقع خطأ: ' + error.message);
+    } finally {
+      setUploadingImage(false);
+    }
   }
 
-  async function deleteProduct(id) {
-    if (!window.confirm('واش متأكد بغيتي تحذف هاد المنتج؟')) return;
-
+  async function toggleProduct(product) {
     const { error } = await supabase
       .from('products')
-      .delete()
-      .eq('id', id);
+      .update({ active: !product.active })
+      .eq('id', product.id);
 
     if (error) {
-      setMessage('تعذر حذف المنتج: ' + error.message);
-      return;
+      setMessage('تعذر تغيير حالة المنتج: ' + error.message);
+    } else {
+      await loadProducts(true);
+      setMessage('تم تحديث المنتج');
     }
-
-    await loadProducts(true);
-    setMessage('تم حذف المنتج');
   }
 
-  async function updateOrder(id, status) {
+  async function updateOrderStatus(order, status) {
     const { error } = await supabase
       .from('orders')
       .update({ status })
-      .eq('id', id);
+      .eq('id', order.id);
 
     if (error) {
       setMessage('تعذر تحديث الطلب: ' + error.message);
-      return;
+    } else {
+      await loadOrders();
+      setMessage('تم تحديث حالة الطلب');
     }
-
-    await loadOrders();
-    setMessage('تم تحديث حالة الطلب');
   }
 
-  async function deleteOrder(id) {
-    if (!window.confirm('واش متأكد بغيتي تحذف الطلب؟')) return;
-
-    const { error } = await supabase
-      .from('orders')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      setMessage('تعذر حذف الطلب: ' + error.message);
-      return;
-    }
-
-    await loadOrders();
-    setMessage('تم حذف الطلب');
+  function openWhatsApp(phone, text) {
+    const digits = phone.replace(/\D/g, '');
+    window.open(
+      `https://wa.me/${digits}?text=${encodeURIComponent(text)}`,
+      '_blank',
+      'noopener,noreferrer'
+    );
   }
 
-  return (
-    <div dir="rtl" className="store">
-      <header className="header">
-        <div>
-          <h1>RM-PHONE</h1>
-          <p>متجرك للهواتف والإكسسوارات</p>
+  function contactPage() {
+    return (
+      <section className="page-section">
+        <h2>تواصل معنا</h2>
+        <p>RM-PHONE دائماً قريب ليك.</p>
+
+        {CONTACTS.map(person => (
+          <div className="contact-card" key={person.name}>
+            <h3>{person.name}</h3>
+            <p dir="ltr">{person.phone}</p>
+            <a href={`tel:${person.phone}`}>اتصال</a>
+            {' '}
+            <button
+              type="button"
+              onClick={() => openWhatsApp(
+                person.digits,
+                'السلام عليكم، بغيت نتواصل مع RM-PHONE'
+              )}
+            >
+              WhatsApp
+            </button>
+          </div>
+        ))}
+
+        <div className="contact-card">
+          <h3>Instagram</h3>
+          <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">
+            @rmphon.e
+          </a>
         </div>
 
-        <nav>
+        <div className="contact-card">
+          <h3>التبليغ عن مشكل</h3>
+          <button
+            type="button"
+            onClick={() => openWhatsApp(
+              CONTACTS[0].digits,
+              'السلام عليكم، عندي مشكل في موقع RM-PHONE: '
+            )}
+          >
+            راسلنا للإبلاغ عن مشكل
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  function repairPage() {
+    return (
+      <section className="page-section">
+        <h2>إصلاح الهاتف في منزلك</h2>
+        <p>الخدمة متوفرة داخل مدينة طنجة فقط.</p>
+
+        <form onSubmit={sendRepairRequest} className="main-form">
+          <label>الاسم الكامل</label>
+          <input
+            required
+            value={repair.name}
+            onChange={e => setRepair({
+              ...repair, name: e.target.value
+            })}
+            placeholder="الاسم الكامل"
+          />
+
+          <label>رقم الهاتف</label>
+          <input
+            required
+            type="tel"
+            value={repair.phone}
+            onChange={e => setRepair({
+              ...repair, phone: e.target.value
+            })}
+            placeholder="رقم الهاتف"
+          />
+
+          <label>نوع الهاتف</label>
+          <input
+            required
+            value={repair.device}
+            onChange={e => setRepair({
+              ...repair, device: e.target.value
+            })}
+            placeholder="مثلاً iPhone 13"
+          />
+
+          <label>شنو هو العطل؟</label>
+          <textarea
+            required
+            value={repair.problem}
+            onChange={e => setRepair({
+              ...repair, problem: e.target.value
+            })}
+            placeholder="شرح لينا المشكل"
+          />
+
+          <label>العنوان داخل طنجة</label>
+          <input
+            required
+            value={repair.address}
+            onChange={e => setRepair({
+              ...repair, address: e.target.value
+            })}
+            placeholder="الحي والشارع"
+          />
+
+          <button type="submit">إرسال طلب الإصلاح عبر WhatsApp</button>
+        </form>
+      </section>
+    );
+  }
+    function shopPage() {
+    return (
+      <section className="page-section">
+        <h2>منتجاتنا</h2>
+
+        <input
+          type="search"
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="قلب على منتج..."
+        />
+
+        <div className="category-list">
+          {categories.map(cat => (
+            <button
+              key={cat}
+              type="button"
+              className={category === cat ? 'active' : ''}
+              onClick={() => setCategory(cat)}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {loading ? (
+          <p>جاري تحميل المنتجات...</p>
+        ) : filteredProducts.length === 0 ? (
+          <p>ما كاين حتى منتج حالياً.</p>
+        ) : (
+          <div className="products-grid">
+            {filteredProducts.map(product => (
+              <article className="product-card" key={product.id}>
+                {product.image_url && (
+                  <img
+                    src={product.image_url}
+                    alt={product.name}
+                  />
+                )}
+                <h3>{product.name}</h3>
+                <p>{product.description}</p>
+                <strong>{money(product.price)}</strong>
+                <button
+                  type="button"
+                  onClick={() => addToCart(product)}
+                >
+                  زيد للسلة
+                </button>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    );
+  }
+
+  function cartPage() {
+    return (
+      <section className="page-section">
+        <h2>سلة المشتريات</h2>
+
+        {!cart.length ? (
+          <p>السلة فارغة.</p>
+        ) : (
+          <>
+            {cart.map(item => (
+              <div className="cart-item" key={item.id}>
+                <strong>{item.name}</strong>
+                <span>{money(item.price)}</span>
+                <button
+                  type="button"
+                  onClick={() => changeQuantity(item.id, -1)}
+                >
+                  -
+                </button>
+                <span>{item.quantity}</span>
+                <button
+                  type="button"
+                  onClick={() => changeQuantity(item.id, 1)}
+                >
+                  +
+                </button>
+              </div>
+            ))}
+
+            <h3>المجموع: {money(total)}</h3>
+
+            <form onSubmit={submitOrder} className="main-form">
+              <label>الاسم الكامل</label>
+              <input
+                required
+                value={customer.name}
+                onChange={e => setCustomer({
+                  ...customer, name: e.target.value
+                })}
+                placeholder="الاسم الكامل"
+              />
+
+              <label>رقم الهاتف</label>
+              <input
+                required
+                type="tel"
+                value={customer.phone}
+                onChange={e => setCustomer({
+                  ...customer, phone: e.target.value
+                })}
+                placeholder="رقم الهاتف"
+              />
+
+              <label>المدينة</label>
+              <input
+                required
+                value={customer.city}
+                onChange={e => setCustomer({
+                  ...customer, city: e.target.value
+                })}
+                placeholder="المدينة"
+              />
+
+              <label>العنوان</label>
+              <input
+                required
+                value={customer.address}
+                onChange={e => setCustomer({
+                  ...customer, address: e.target.value
+                })}
+                placeholder="العنوان بالتفصيل"
+              />
+
+              <button type="submit">تأكيد الطلب</button>
+            </form>
+          </>
+        )}
+      </section>
+    );
+  }
+
+  function adminPage() {
+    if (!admin) {
+      return (
+        <section className="page-section">
+          <h2>دخول الإدارة</h2>
+          <form onSubmit={loginAdmin} className="main-form">
+            <label>البريد الإلكتروني</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              placeholder="البريد الإلكتروني"
+            />
+
+            <label>كلمة المرور</label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="كلمة المرور"
+            />
+
+            <button type="submit">دخول</button>
+          </form>
+        </section>
+      );
+    }
+
+    return (
+      <section className="page-section">
+        <h2>لوحة الإدارة</h2>
+        <button type="button" onClick={logoutAdmin}>
+          تسجيل الخروج
+        </button>
+
+        <h3>إضافة منتج جديد</h3>
+        <form onSubmit={saveProduct} className="main-form">
+          <label>اسم المنتج</label>
+          <input
+            required
+            value={productForm.name}
+            onChange={e => setProductForm({
+              ...productForm, name: e.target.value
+            })}
+            placeholder="اسم المنتج"
+          />
+
+          <label>التصنيف</label>
+          <select
+            value={productForm.category}
+            onChange={e => setProductForm({
+              ...productForm, category: e.target.value
+            })}
+          >
+            {categories.filter(c => c !== 'الكل').map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+
+          <label>الثمن بالدرهم</label>
+          <input
+            required
+            type="number"
+            min="0"
+            value={productForm.price}
+            onChange={e => setProductForm({
+              ...productForm, price: e.target.value
+            })}
+            placeholder="الثمن"
+          />
+
+          <label>الوصف</label>
+          <textarea
+            value={productForm.description}
+            onChange={e => setProductForm({
+              ...productForm, description: e.target.value
+            })}
+            placeholder="وصف المنتج"
+          />
+
+          <label>صورة المنتج من الهاتف</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={e => setImageFile(
+              e.target.files?.[0] || null
+            )}
+          />
+
+          <label>أو رابط الصورة</label>
+          <input
+            type="url"
+            value={productForm.image_url}
+            onChange={e => setProductForm({
+              ...productForm, image_url: e.target.value
+            })}
+            placeholder="رابط الصورة (اختياري)"
+          />
+
+          <button type="submit" disabled={uploadingImage}>
+            {uploadingImage ? 'جاري الحفظ...' : 'إضافة المنتج'}
+          </button>
+        </form>
+
+        <h3>المنتجات الحالية</h3>
+        {products.map(product => (
+          <div className="admin-item" key={product.id}>
+            <span>{product.name} — {money(product.price)}</span>
+            <button
+              type="button"
+              onClick={() => toggleProduct(product)}
+            >
+              {product.active ? 'إخفاء' : 'إظهار'}
+            </button>
+          </div>
+        ))}
+      </section>
+    );
+  }
+    return (
+    <div className="app">
+      <header className="site-header">
+        <h1>RM-PHONE</h1>
+        <p>كل ما تحتاجه لهاتفك</p>
+
+        <nav className="main-nav">
           <button onClick={() => setPage('shop')}>الرئيسية</button>
           <button onClick={() => setPage('cart')}>
             السلة ({cart.reduce((s, i) => s + i.quantity, 0)})
           </button>
-          <button onClick={() => setPage('login')}>الإدارة</button>
+          <button onClick={() => setPage('repair')}>إصلاح في المنزل</button>
+          <button onClick={() => setPage('contact')}>تواصل معنا</button>
+          <button onClick={() => setPage('admin')}>الإدارة</button>
         </nav>
       </header>
 
       {message && (
-        <div className="message">
+        <div className="notice">
           {message}
           <button onClick={() => setMessage('')}>×</button>
         </div>
       )}
 
-      {page === 'shop' && (
-        <main>
-          <section className="hero">
-            <h2>مرحبا بكم في RM-PHONE</h2>
-            <p>اكتشف أحدث الهواتف والإكسسوارات</p>
-          </section>
+      <main>
+        {page === 'shop' && shopPage()}
+        {page === 'cart' && cartPage()}
+        {page === 'repair' && repairPage()}
+        {page === 'contact' && contactPage()}
+        {page === 'admin' && adminPage()}
+      </main>
 
-          <input
-            className="search"
-            placeholder="قلب على منتج..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
-
-          <div className="categories">
-            {categories.map(c => (
-              <button
-                key={c}
-                className={category === c ? 'selected' : ''}
-                onClick={() => setCategory(c)}
-              >
-                {c}
-              </button>
-            ))}
-          </div>
-
-          {loading ? (
-            <p>جاري تحميل المنتجات...</p>
-          ) : filteredProducts.length === 0 ? (
-            <p className="empty">ما كاين حتى منتج دابا.</p>
-          ) : (
-            <div className="products">
-              {filteredProducts.map(p => (
-                <article className="product" key={p.id}>
-                  {p.image_url ? (
-                    <img src={p.image_url} alt={p.name} />
-                  ) : (
-                    <div className="no-image">RM-PHONE</div>
-                  )}
-                  <h3>{p.name}</h3>
-                  <p>{p.description}</p>
-                  <strong>{money(p.price)}</strong>
-                  <button onClick={() => addToCart(p)}>
-                    زيد للسلة
-                  </button>
-                </article>
-              ))}
-            </div>
-          )}
-        </main>
-      )}
-
-      {page === 'cart' && (
-        <main className="panel">
-          <h2>سلة المشتريات</h2>
-
-          {cart.length === 0 ? (
-            <p>السلة فارغة</p>
-          ) : (
-            <>
-              {cart.map(item => (
-                <div className="cart-item" key={item.id}>
-                  <div>
-                    <b>{item.name}</b>
-                    <p>{money(item.price)}</p>
-                  </div>
-                  <div>
-                    <button onClick={() => changeQuantity(item.id, -1)}>
-                      -
-                    </button>
-                    <span>{item.quantity}</span>
-                    <button onClick={() => changeQuantity(item.id, 1)}>
-                      +
-                    </button>
-                  </div>
-                </div>
-              ))}
-
-              <h3>المجموع: {money(total)}</h3>
-
-              <form onSubmit={submitOrder} className="form">
-                <h3>معلومات التوصيل</h3>
-                <input
-                  required
-                  placeholder="الاسم الكامل"
-                  value={customer.name}
-                  onChange={e =>
-                    setCustomer({ ...customer, name: e.target.value })
-                  }
-                />
-                <input
-                  required
-                  type="tel"
-                  placeholder="رقم الهاتف"
-                  value={customer.phone}
-                  onChange={e =>
-                    setCustomer({ ...customer, phone: e.target.value })
-                  }
-                />
-                <textarea
-                  required
-                  placeholder="العنوان بالتفصيل"
-                  value={customer.address}
-                  onChange={e =>
-                    setCustomer({ ...customer, address: e.target.value })
-                  }
-                />
-                <button type="submit">أكد الطلب</button>
-              </form>
-            </>
-          )}
-        </main>
-      )}
-
-      {page === 'login' && (
-        <main className="panel">
-          <h2>دخول الإدارة</h2>
-          <form className="form" onSubmit={login}>
-            <input
-              required
-              type="email"
-              placeholder="البريد الإلكتروني"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-            />
-            <input
-              required
-              type="password"
-              placeholder="كلمة المرور"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-            />
-            <button type="submit">دخول</button>
-          </form>
-        </main>
-      )}
-
-      {page === 'admin' && admin && (
-        <main className="panel">
-          <div className="admin-title">
-            <h2>لوحة إدارة RM-PHONE</h2>
-            <button onClick={logout}>خروج</button>
-          </div>
-
-          <h3>إضافة منتج جديد</h3>
-          <form className="form" onSubmit={saveProduct}>
-            <input
-              required
-              placeholder="اسم المنتج"
-              value={productForm.name}
-              onChange={e =>
-                setProductForm({ ...productForm, name: e.target.value })
-              }
-            />
-            <select
-              value={productForm.category}
-              onChange={e =>
-                setProductForm({ ...productForm, category: e.target.value })
-              }
-            >
-              {categories.filter(c => c !== 'الكل').map(c => (
-                <option key={c}>{c}</option>
-              ))}
-            </select>
-            <input
-              required
-              type="number"
-              min="0"
-              placeholder="الثمن بالدرهم"
-              value={productForm.price}
-              onChange={e =>
-                setProductForm({ ...productForm, price: e.target.value })
-              }
-            />
-            <textarea
-              placeholder="وصف المنتج"
-              value={productForm.description}
-              onChange={e =>
-                setProductForm({
-                  ...productForm, description: e.target.value
-                })
-              }
-            />
-            <input
-              placeholder="رابط صورة المنتج"
-              value={productForm.image_url}
-              onChange={e =>
-                setProductForm({
-                  ...productForm, image_url: e.target.value
-                })
-              }
-            />
-            <button type="submit">أضف المنتج</button>
-          </form>
-
-          <h3>المنتجات ({products.length})</h3>
-          {products.map(p => (
-            <div className="admin-item" key={p.id}>
-              <span>{p.name} — {money(p.price)}</span>
-              <button onClick={() => deleteProduct(p.id)}>حذف</button>
-            </div>
-          ))}
-
-          <h3>الطلبات ({orders.length})</h3>
-          {orders.length === 0 && <p>ما كايناش طلبات دابا.</p>}
-
-          {orders.map(order => (
-            <article className="order" key={order.id}>
-              <h4>الطلب: {order.id}</h4>
-              <p>الاسم: {order.customer_name}</p>
-              <p>الهاتف: {order.phone}</p>
-              <p>العنوان: {order.address}</p>
-              <p>المجموع: {money(order.total)}</p>
-              <p>الحالة: {order.status}</p>
-
-              <ul>
-                {(Array.isArray(order.items) ? order.items : []).map(
-                  (item, i) => (
-                    <li key={i}>
-                      {item.name} × {item.quantity}
-                    </li>
-                  )
-                )}
-              </ul>
-
-              <select
-                value={order.status || 'new'}
-                onChange={e => updateOrder(order.id, e.target.value)}
-              >
-                <option value="new">جديد</option>
-                <option value="accepted">مقبول</option>
-                <option value="rejected">مرفوض</option>
-                <option value="cancelled">ملغي</option>
-                <option value="completed">مكتمل</option>
-              </select>
-
-              <button onClick={() => deleteOrder(order.id)}>
-                حذف الطلب
-              </button>
-            </article>
-          ))}
-        </main>
-      )}
-
-      <footer>
-        <p>© RM-PHONE - جميع الحقوق محفوظة</p>
+      <footer className="site-footer">
+        <h3>RM-PHONE</h3>
+        <p>طنجة - المغرب</p>
+        <p>إصلاح الهواتف وبيع الإكسسوارات</p>
+        <a href={INSTAGRAM_URL} target="_blank" rel="noreferrer">
+          Instagram @rmphon.e
+        </a>
       </footer>
     </div>
   );
