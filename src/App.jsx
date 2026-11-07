@@ -677,9 +677,16 @@ export default function App() {
           </button>
         </form>
 
-        <h3>المنتجات الحالية</h3>
+              <h3>المنتجات الحالية</h3>
         {products.map(product => (
           <div className="admin-item" key={product.id}>
+            {product.image_url && (
+              <img
+                src={product.image_url}
+                alt={product.name}
+                style={{ width: '70px', height: '70px', objectFit: 'contain' }}
+              />
+            )}
             <span>{product.name} — {money(product.price)}</span>
             <button
               type="button"
@@ -688,7 +695,9 @@ export default function App() {
               {product.active ? 'إخفاء' : 'إظهار'}
             </button>
           </div>
-        ))}        <h3>الطلبات الواردة</h3>
+        ))}
+
+        <h3>الطلبات الواردة</h3>
         <button type="button" onClick={loadOrders}>
           تحديث الطلبات
         </button>
@@ -696,25 +705,27 @@ export default function App() {
         {orders.length === 0 ? (
           <p>ما كاين حتى طلب حالياً.</p>
         ) : (
-          {(order.items || []).map((item, index) => (
-  <div key={index} className="order-product">
-    {item.image_url && (
-      <img
-        src={item.image_url}
-        alt={item.name}
-        style={{
-          width: '80px',
-          height: '80px',
-          objectFit: 'contain',
-          borderRadius: '8px'
-        }}
-      />
-    )}
-    <p>{item.name} × {item.quantity}</p>
-    <p>{money(item.price)}</p>
-  </div>
-))}
-              </p>
+          orders.map(order => (
+            <div className="admin-item" key={order.id}>
+              <h4>طلب من: {order.customer_name}</h4>
+              <p>الهاتف: {order.phone}</p>
+              <p>المدينة: {order.city}</p>
+              <p>العنوان: {order.address}</p>
+
+              {(order.items || []).map((item, index) => (
+                <div key={index}>
+                  {item.image_url && (
+                    <img
+                      src={item.image_url}
+                      alt={item.name}
+                      style={{ width: '80px', height: '80px', objectFit: 'contain' }}
+                    />
+                  )}
+                  <p>{item.name} × {item.quantity}</p>
+                  <p>{money(item.price)}</p>
+                </div>
+              ))}
+
               <p>المجموع: {money(order.total)}</p>
               <p>الحالة: {order.status}</p>
 
