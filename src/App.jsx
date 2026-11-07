@@ -165,9 +165,10 @@ export default function App() {
       address: customer.address,
       items: cart.map(item => ({
         id: item.id,
-        name: item.name,
+                name: item.name,
         price: item.price,
-        quantity: item.quantity
+        quantity: item.quantity,
+        image_url: item.image_url
       })),
       total,
       status: 'new'
