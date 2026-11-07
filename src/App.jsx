@@ -696,16 +696,24 @@ export default function App() {
         {orders.length === 0 ? (
           <p>ما كاين حتى طلب حالياً.</p>
         ) : (
-          orders.map(order => (
-            <div className="admin-item" key={order.id}>
-              <h4>طلب من: {order.customer_name}</h4>
-              <p>الهاتف: {order.phone}</p>
-              <p>المدينة: {order.city}</p>
-              <p>العنوان: {order.address}</p>
-              <p>
-                المنتجات: {(order.items || []).map(item =>
-                  `${item.name} × ${item.quantity}`
-                ).join('، ')}
+          {(order.items || []).map((item, index) => (
+  <div key={index} className="order-product">
+    {item.image_url && (
+      <img
+        src={item.image_url}
+        alt={item.name}
+        style={{
+          width: '80px',
+          height: '80px',
+          objectFit: 'contain',
+          borderRadius: '8px'
+        }}
+      />
+    )}
+    <p>{item.name} × {item.quantity}</p>
+    <p>{money(item.price)}</p>
+  </div>
+))}
               </p>
               <p>المجموع: {money(order.total)}</p>
               <p>الحالة: {order.status}</p>
