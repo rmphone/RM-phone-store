@@ -770,7 +770,12 @@ export default function App() {
 
               <p>المجموع: {money(order.total)}</p>
               <p>الحالة: {order.status}</p>
-
+<button
+  type="button"
+  onClick={() => deleteOrder(order)}
+>
+  🗑 حذف الطلب
+</button>
               <select
                 value={order.status || 'new'}
                 onChange={e => updateOrderStatus(order, e.target.value)}
