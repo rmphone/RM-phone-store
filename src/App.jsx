@@ -300,7 +300,37 @@ export default function App() {
       setMessage('تم تحديث المنتج');
     }
   }
+  async function deleteOrder(order) {
+    if (!window.confirm('واش متأكد بغيتي تمسح هاد الطلب؟')) return;
 
+    const { error } = await supabase
+      .from('orders')
+      .delete()
+      .eq('id', order.id);
+
+    if (error) {
+      setMessage('تعذر حذف الطلب: ' + error.message);
+    } else {
+      await loadOrders();
+      setMessage('تم حذف الطلب');
+    }
+  }
+
+  async function deleteProduct(product) {
+    if (!window.confirm('واش متأكد بغيتي تمسح هاد المنتج نهائياً؟')) return;
+
+    const { error } = await supabase
+      .from('products')
+      .delete()
+      .eq('id', product.id);
+
+    if (error) {
+      setMessage('تعذر حذف المنتج: ' + error.message);
+    } else {
+      await loadProducts(true);
+      setMessage('تم حذف المنتج');
+    }
+  }
   async function updateOrderStatus(order, status) {
     const { error } = await supabase
       .from('orders')
