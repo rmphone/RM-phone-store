@@ -724,6 +724,12 @@ export default function App() {
             >
               {product.active ? 'إخفاء' : 'إظهار'}
             </button>
+            <button
+  type="button"
+  onClick={() => deleteProduct(product)}
+>
+  حذف المنتج
+</button>
           </div>
         ))}
 
