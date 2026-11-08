@@ -293,3 +293,9 @@ input:focus, textarea:focus, select:focus {
     height: 190px;
   }
 }
+.site-logo {
+  height: 55px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
