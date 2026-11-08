@@ -799,21 +799,28 @@ export default function App() {
   }
     return (
     <div className="app">
-      <header className="site-header">
-       <h1
-  onClick={() => {
-    const next = logoClicks + 1;
-    setLogoClicks(next);
+    
+<header className="site-header">
+  <h1
+    onClick={() => {
+      const next = logoClicks + 1;
+      setLogoClicks(next);
 
-    if (next >= 2) {
-      setPage('admin');
-      setLogoClicks(0);
-    }
-  }}
-  style={{ cursor: 'pointer' }}
->
-  RM-PHONE
-</h1>
+      if (next >= 2) {
+        setPage('admin');
+        setLogoClicks(0);
+      }
+    }}
+    style={{ cursor: 'pointer' }}
+  >
+    <img
+      src="/logo.png"
+      alt="RM PHONE"
+      className="site-logo"
+    />
+  </h1>
+</header>
+
         <p>كل ما تحتاجه لهاتفك</p>
 
         <nav className="main-nav">
