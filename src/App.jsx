@@ -821,12 +821,7 @@ export default function App() {
   />
 </h1>
 
-.site-logo {
-  height: 55px;
-  width: auto;
-  object-fit: contain;
-  display: block;
-}
+
 
 </header>
 
